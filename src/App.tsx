@@ -67,7 +67,7 @@ export default function App() {
           created_at: serverTimestamp()
         };
         await setDoc(doc(db, 'users', firebaseUser.uid), userProfile, { merge: true });
-        setUser({ id: firebaseUser.uid, ...userProfile } as Profile);
+        setUser({ id: firebaseUser.uid, ...userProfile } as unknown as Profile);
       }
     } catch (error) {
       console.error("Login failed", error);

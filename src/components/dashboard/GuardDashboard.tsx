@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Camera, CheckCircle2, XCircle, User, AlertCircle, ScanLine, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Html5Qrcode } from 'html5-qrcode';
@@ -8,59 +8,89 @@ import { db } from '../../lib/firebase';
 
 const handleFirestoreError = (error: unknown) => {
   console.error("Firestore Error: ", error);
-  // Optional: show a toast or alert here for the error
 };
 
 export default function GuardDashboard({ user }: { user: Profile }) {
   const [isScanning, setIsScanning] = useState(false);
   const [scanResult, setScanResult] = useState<{ student: Student; fetcher: Fetcher } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const scannerRef = useRef<Html5Qrcode | null>(null);
+  const isStopping = useRef(false);
+
+  const stopScanner = useCallback(async () => {
+    if (isStopping.current) return;
+    isStopping.current = true;
+    try {
+      const scanner = scannerRef.current;
+      if (scanner) {
+        if (scanner.isScanning) {
+          await scanner.stop();
+        }
+        scanner.clear();
+        scannerRef.current = null;
+      }
+    } catch (e) {
+      console.error("Error stopping scanner:", e);
+    } finally {
+      isStopping.current = false;
+    }
+  }, []);
 
   useEffect(() => {
-    let html5QrCode: Html5Qrcode | null = null;
     let timeoutId: ReturnType<typeof setTimeout>;
-    let isComponentMounted = true;
+    let cancelled = false;
 
     if (isScanning) {
-      // Delay initialization to allow motion.div to mount the element
-      timeoutId = setTimeout(() => {
-        if (!isComponentMounted) return;
+      timeoutId = setTimeout(async () => {
+        if (cancelled) return;
         const element = document.getElementById("qr-reader");
         if (!element) return;
 
-        html5QrCode = new Html5Qrcode("qr-reader");
-        html5QrCode.start(
-          { facingMode: "environment" },
-          { fps: 10 }, // removed qrbox to scan whole video feed
-          (decodedText) => {
-            console.log("Scanned QR Code:", decodedText);
-            handleScan(decodedText);
-            html5QrCode?.stop().catch(console.error);
-            setIsScanning(false);
-          },
-          (err) => {
-            // Ignore parse errors from scanning empty frames
-          }
-        ).catch(err => {
+        // Clean up any leftover scanner instance before creating a new one
+        await stopScanner();
+
+        if (cancelled) return;
+
+        const html5QrCode = new Html5Qrcode("qr-reader");
+        scannerRef.current = html5QrCode;
+
+        try {
+          await html5QrCode.start(
+            { facingMode: "environment" },
+            {
+              fps: 20,
+              qrbox: { width: 300, height: 300 },
+              aspectRatio: 1.0,
+              disableFlip: false,
+              // @ts-ignore - experimentalFeatures is supported by the library but missing from type definitions
+              experimentalFeatures: {
+                useBarCodeDetectorIfSupported: true
+              }
+            },
+            (decodedText) => {
+              console.log("Scanned QR Code:", decodedText);
+              handleScan(decodedText);
+              // Stop scanner then allow re-scan
+              stopScanner().then(() => setIsScanning(false));
+            },
+            () => {
+              // Ignore parse errors from scanning empty frames
+            }
+          );
+        } catch (err) {
           console.error("Scanner failed to start:", err);
           setError("Failed to start camera. Please ensure camera permissions are granted.");
           setIsScanning(false);
-        });
-      }, 500); // 500ms allows the react-motion animation to finish, otherwise the DOM container size might be 0 which breaks html5-qrcode
+        }
+      }, 500);
     }
 
     return () => {
-      isComponentMounted = false;
+      cancelled = true;
       clearTimeout(timeoutId);
-      if (html5QrCode) {
-        if (html5QrCode.isScanning) {
-          html5QrCode.stop().then(() => html5QrCode?.clear()).catch(console.error);
-        } else {
-          html5QrCode.clear();
-        }
-      }
+      stopScanner();
     };
-  }, [isScanning]);
+  }, [isScanning, stopScanner]);
 
   const handleScan = async (decodedText: string) => {
     try {
@@ -145,8 +175,8 @@ export default function GuardDashboard({ user }: { user: Profile }) {
                 exit={{ opacity: 0 }}
                 className="flex-1 flex flex-col items-center justify-center space-y-6"
               >
-                <div className="w-full max-w-sm mx-auto overflow-hidden rounded-2xl border-2 border-blue-100 shadow-inner flex flex-col relative bg-black">
-                  <div id="qr-reader" className="w-full h-full" />
+                <div className="w-full max-w-sm mx-auto overflow-hidden rounded-2xl border-2 border-blue-100 shadow-inner flex flex-col relative bg-black" style={{ minHeight: '320px' }}>
+                  <div id="qr-reader" className="w-full" style={{ minHeight: '320px' }} />
                 </div>
                 <div className="flex items-center text-blue-600 font-bold uppercase tracking-widest text-xs animate-pulse">
                   <ScanLine className="w-5 h-5 mr-3" />

@@ -1,6 +1,6 @@
 export type UserRole = 'admin' | 'teacher' | 'guard' | 'parent';
 
-export type StudentStatus = 'absent' | 'present' | 'dismissed';
+export type StudentStatus = 'absent' | 'present' | 'dismissed' | 'waiting';
 
 export type RelationshipType = 'Case 1' | 'Case 2' | 'Case 3';
 
