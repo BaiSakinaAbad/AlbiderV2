@@ -1,0 +1,6 @@
+{
+  "name": "Albider",
+  "description": "A secure student pick-up and dismissal system featuring QR code verification, role-based access control, and real-time synchronization between security guards and teachers.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["QR Scanning", "Real-time Dashboards", "RBAC"]
+}

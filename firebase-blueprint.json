@@ -1,0 +1,78 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "User profile with role-based access",
+      "type": "object",
+      "properties": {
+        "full_name": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "teacher", "guard", "parent"] },
+        "grade_level": { "type": "string" },
+        "created_at": { "type": "string" }
+      },
+      "required": ["full_name", "role", "created_at"]
+    },
+    "Student": {
+      "title": "Student",
+      "description": "Student information",
+      "type": "object",
+      "properties": {
+        "full_name": { "type": "string" },
+        "grade_level": { "type": "string" },
+        "section": { "type": "string" },
+        "status": { "type": "string", "enum": ["absent", "present", "dismissed", "waiting"] },
+        "holding_area": { "type": "string" },
+        "qr_id": { "type": "string" },
+        "waitTimeStart": { "type": "string" }
+      },
+      "required": ["full_name", "grade_level", "section", "status", "holding_area", "qr_id"]
+    },
+    "Fetcher": {
+      "title": "Fetcher",
+      "description": "Authorized fetcher for a student",
+      "type": "object",
+      "properties": {
+        "student_id": { "type": "string" },
+        "name": { "type": "string" },
+        "relationship": { "type": "string" },
+        "relationship_type": { "type": "string", "enum": ["Case 1", "Case 2", "Case 3"] },
+        "phone_number": { "type": "string" },
+        "photo_url": { "type": "string" },
+        "is_active": { "type": "boolean" },
+        "expiration_date": { "type": "string" }
+      },
+      "required": ["student_id", "name", "relationship", "relationship_type", "phone_number", "is_active"]
+    },
+    "Scan": {
+      "title": "Scan Log",
+      "description": "Log of QR scans",
+      "type": "object",
+      "properties": {
+        "student_id": { "type": "string" },
+        "fetcher_id": { "type": "string" },
+        "scanned_at": { "type": "string" },
+        "guard_id": { "type": "string" },
+        "status": { "type": "string", "enum": ["waiting_at_gate", "dismissed"] }
+      },
+      "required": ["student_id", "fetcher_id", "scanned_at", "guard_id", "status"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "Store user profiles"
+    },
+    "/students/{studentId}": {
+      "schema": { "$ref": "#/entities/Student" },
+      "description": "Store all students"
+    },
+    "/fetchers/{fetcherId}": {
+      "schema": { "$ref": "#/entities/Fetcher" },
+      "description": "Store authorized fetchers"
+    },
+    "/scans/{scanId}": {
+      "schema": { "$ref": "#/entities/Scan" },
+      "description": "Store scan logs/dismissal requests"
+    }
+  }
+}

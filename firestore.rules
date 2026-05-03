@@ -1,0 +1,125 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+    
+    function isGuard() {
+      return isSignedIn() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'guard';
+    }
+
+    function isTeacher() {
+      return isSignedIn() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'teacher';
+    }
+    
+    function isAdmin() {
+      return isSignedIn() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    
+    function hasStaffAccess() {
+      return isGuard() || isTeacher() || isAdmin();
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['full_name', 'role', 'created_at']) &&
+             data.keys().size() >= 3 && data.keys().size() <= 4 &&
+             data.full_name is string && data.full_name.size() > 0 && data.full_name.size() <= 100 &&
+             data.role in ['admin', 'teacher', 'guard', 'parent'] &&
+             data.created_at is timestamp &&
+             ( !('grade_level' in data) || (data.grade_level is string && data.grade_level.size() <= 50) );
+    }
+
+    match /users/{userId} {
+      allow get: if isSignedIn() && (request.auth.uid == userId || hasStaffAccess());
+      allow list: if hasStaffAccess();
+      allow create: if isSignedIn() && isValidId(userId) && request.auth.uid == userId && isValidUser(incoming()) && incoming().created_at == request.time;
+      allow update: if hasStaffAccess() && isValidUser(incoming()) &&
+                    (incoming().diff(existing()).affectedKeys().hasOnly(['full_name', 'grade_level']));
+    }
+
+    function isValidStudent(data) {
+      return data.keys().hasAll(['full_name', 'grade_level', 'section', 'status', 'holding_area', 'qr_id']) &&
+             data.keys().size() >= 6 && data.keys().size() <= 7 &&
+             data.full_name is string && data.full_name.size() > 0 && data.full_name.size() <= 100 &&
+             data.grade_level is string && data.grade_level.size() > 0 && data.grade_level.size() <= 50 &&
+             data.section is string && data.section.size() > 0 && data.section.size() <= 50 &&
+             data.status in ['absent', 'present', 'dismissed', 'waiting'] &&
+             data.holding_area is string && data.holding_area.size() > 0 && data.holding_area.size() <= 50 &&
+             data.qr_id is string && data.qr_id.size() > 0 && data.qr_id.size() <= 100 &&
+             ( !('waitTimeStart' in data) || data.waitTimeStart is timestamp );
+    }
+
+    match /students/{studentId} {
+      allow read: if hasStaffAccess();
+      allow create: if isAdmin() && isValidId(studentId) && isValidStudent(incoming());
+      allow update: if hasStaffAccess() && isValidStudent(incoming()) &&
+                    // Teachers can update status, guards can update status
+                    (incoming().diff(existing()).affectedKeys().hasOnly(['status', 'waitTimeStart']));
+    }
+
+    function isValidFetcher(data) {
+      return data.keys().hasAll(['student_id', 'name', 'relationship', 'relationship_type', 'phone_number', 'is_active']) &&
+             data.keys().size() >= 6 && data.keys().size() <= 8 &&
+             data.student_id is string && data.student_id.size() > 0 && data.student_id.size() <= 128 &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+             data.relationship is string && data.relationship.size() > 0 && data.relationship.size() <= 50 &&
+             data.relationship_type in ['Case 1', 'Case 2', 'Case 3'] &&
+             data.phone_number is string && data.phone_number.size() > 0 && data.phone_number.size() <= 20 &&
+             data.is_active is bool &&
+             ( !('photo_url' in data) || (data.photo_url is string && data.photo_url.size() <= 500) ) &&
+             ( !('expiration_date' in data) || (data.expiration_date is timestamp) );
+    }
+
+    match /fetchers/{fetcherId} {
+      allow read: if hasStaffAccess();
+      allow create: if isAdmin() && isValidId(fetcherId) && isValidFetcher(incoming()) &&
+                    exists(/databases/$(database)/documents/students/$(incoming().student_id));
+      allow update: if isAdmin() && isValidFetcher(incoming());
+    }
+
+    function isValidScan(data) {
+      return data.keys().hasAll(['student_id', 'fetcher_id', 'scanned_at', 'guard_id', 'status']) &&
+             data.keys().size() == 5 &&
+             data.student_id is string && data.student_id.size() > 0 && data.student_id.size() <= 128 &&
+             data.fetcher_id is string && data.fetcher_id.size() > 0 && data.fetcher_id.size() <= 128 &&
+             data.scanned_at is timestamp &&
+             data.guard_id is string && data.guard_id.size() > 0 && data.guard_id.size() <= 128 &&
+             data.status in ['waiting_at_gate', 'dismissed'];
+    }
+
+    match /scans/{scanId} {
+      allow read: if hasStaffAccess();
+      allow create: if isGuard() && isValidId(scanId) && isValidScan(incoming()) &&
+                    incoming().scanned_at == request.time &&
+                    incoming().guard_id == request.auth.uid &&
+                    exists(/databases/$(database)/documents/students/$(incoming().student_id)) &&
+                    exists(/databases/$(database)/documents/fetchers/$(incoming().fetcher_id));
+      allow update: if hasStaffAccess() && isValidScan(incoming()) &&
+                    incoming().diff(existing()).affectedKeys().hasOnly(['status']);
+    }
+  }
+}
