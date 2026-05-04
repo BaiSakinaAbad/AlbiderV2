@@ -9,17 +9,17 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { LogIn, Shield, Users, UserCheck, LogOut, Database } from 'lucide-react';
+import { LogIn, Shield, Users, UserCheck, LogOut } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { UserRole, Profile } from './types.ts';
+import { UserRole, Profile } from './types';
 import { auth, db } from './lib/firebase';
 import { signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 
 // Components
-import AdminDashboard from './components/dashboard/AdminDashboard.tsx';
-import TeacherDashboard from './components/dashboard/TeacherDashboard.tsx';
-import GuardDashboard from './components/dashboard/GuardDashboard.tsx';
+import AdminDashboard from './components/dashboard/AdminDashboard';
+import TeacherDashboard from './components/dashboard/TeacherDashboard';
+import GuardDashboard from './components/dashboard/GuardDashboard';
 
 export default function App() {
   const [user, setUser] = useState<Profile | null>(null);
@@ -212,7 +212,7 @@ export default function App() {
       {/* Bottom Status Bar */}
       <footer className="h-10 bg-slate-100 border-t border-slate-200 px-6 flex items-center justify-between text-[10px] font-bold text-slate-500 tracking-wider uppercase shrink-0">
         <div className="flex items-center space-x-4">
-          <span className="flex items-center"><span className="w-1.5 h-1.5 bg-green-500 rounded-full mr-2"></span> SUPABASE_CONNECTED</span>
+          <span className="flex items-center"><span className="w-1.5 h-1.5 bg-green-500 rounded-full mr-2"></span> FIREBASE_CONNECTED</span>
           <span className="flex items-center"><span className="w-1.5 h-1.5 bg-blue-500 rounded-full mr-2"></span> TWILIO_SMS_ACTIVE</span>
         </div>
         <div className="hidden sm:flex space-x-6">

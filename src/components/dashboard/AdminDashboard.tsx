@@ -1,10 +1,15 @@
 import React, { useState } from 'react';
-import { Users, GraduationCap, Settings, UserPlus, FileText, Activity, X, Upload, Smartphone, Clock, AlertTriangle, Search, Download, Trash2, Shield, Edit2, RotateCcw, Database } from 'lucide-react';
+import { Users, GraduationCap, Settings, UserPlus, FileText, Activity, X, Upload, Smartphone, Clock, AlertTriangle, Search, Download, Trash2, Shield, RotateCcw, Database } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Profile, GradeSettings } from '../../types.ts';
-import { seedDatabase } from '../../lib/seedDb';
-import { FormInput, FormSelect } from './helpers/FormComponents.tsx';
-import { NavTab, StatCard, LogEntry, EditGradeModal, ConfirmDialog } from './helpers/SharedComponents.tsx';
+import { seedDatabase } from '../../lib/seedDb.ts';
+import { FormInput } from './helpers/FormInput';
+import { FormSelect } from './helpers/FormSelect';
+import { NavTab } from './helpers/NavTab';
+import { StatCard } from './helpers/StatCard';
+import { LogEntry } from './helpers/LogEntry';
+import { EditGradeModal } from './helpers/EditGradeModal';
+import { ConfirmDialog } from './helpers/ConfirmDialog';
 
 function FetcherCard({ type, color }: { type: string, color: string }) {
   return (

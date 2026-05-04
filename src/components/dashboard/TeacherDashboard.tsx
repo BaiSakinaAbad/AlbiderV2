@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Clock, CheckCircle2, AlertTriangle, Send, Bell, X, Smartphone, BookOpen, QrCode, Download } from 'lucide-react';
+import { Users, Clock, CheckCircle2, AlertTriangle, Send, Bell, X, BookOpen, QrCode, Download } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { QRCodeCanvas } from 'qrcode.react';
-import { Profile, Student, Fetcher } from '../../types.ts';
+import { Profile, Student, Fetcher } from '../../types';
 import { collection, query, onSnapshot, doc, updateDoc, getDocs, where } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 
