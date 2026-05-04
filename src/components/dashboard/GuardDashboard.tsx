@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Camera, CheckCircle2, XCircle, User, AlertCircle, ScanLine, Clock } from 'lucide-react';
+import { Camera, XCircle, User, AlertCircle, ScanLine } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Html5Qrcode } from 'html5-qrcode';
-import { Profile, Student, Fetcher } from '../../types.ts';
-import { collection, query, where, getDocs, doc, updateDoc, setDoc, serverTimestamp, onSnapshot, orderBy, limit } from 'firebase/firestore';
+import { Profile, Student, Fetcher } from '../../types';
+import { doc, updateDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 
 const handleFirestoreError = (error: unknown) => {
@@ -62,7 +62,7 @@ export default function GuardDashboard({ user }: { user: Profile }) {
               qrbox: { width: 300, height: 300 },
               aspectRatio: 1.0,
               disableFlip: false,
-              // @ts-ignore - experimentalFeatures is supported by the library but missing from type definitions
+              // @ts-expect-error - experimentalFeatures is supported by the library but missing from type definitions
               experimentalFeatures: {
                 useBarCodeDetectorIfSupported: true
               }
