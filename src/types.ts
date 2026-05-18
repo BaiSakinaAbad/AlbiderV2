@@ -1,4 +1,4 @@
-export type UserRole = 'admin' | 'teacher' | 'guard' | 'parent';
+export type UserRole = 'admin' | 'teacher' | 'security';
 
 export type StudentStatus = 'absent' | 'present' | 'dismissed' | 'waiting';
 
@@ -10,6 +10,7 @@ export interface Profile {
   role: UserRole;
   grade_level?: string;
   created_at: string;
+  needs_role_selection?: boolean;
 }
 
 export interface Student {
@@ -20,6 +21,7 @@ export interface Student {
   status: StudentStatus;
   holding_area: string;
   qr_id: string;
+  is_deleted?: boolean;
 }
 
 export interface Fetcher {
@@ -40,7 +42,7 @@ export interface DismissalLog {
   fetcher_id: string;
   scanned_at: string;
   released_at?: string;
-  guard_id: string;
+  security_id: string;
   teacher_id?: string;
   status: 'waiting_at_gate' | 'dismissed';
 }
